@@ -70,17 +70,47 @@ func (r *Runner) Run(dkr *docker.Docker, spec *Spec) (int, error) {
 	}
 	defer os.Remove(f.Name())
 
+	// Build env
+	var env []string
+	links, err := getLinks(dkr, spec)
+	if err != nil {
+		return 0, err
+	}
+	for name, link := range links {
+		env = append(env, fmt.Sprintf("CI_%s=%s", name, link))
+	}
+
 	if r.Outdoor {
 		log.Println("Running in outdoor")
-		return r.runOutdoor("./" + f.Name())
+		return r.runOutdoor("./"+f.Name(), env)
 	}
 
 	log.Printf("Running in container %s\n", spec.Image)
-	return r.runInContainer(dkr, spec.Image, "./"+f.Name())
+	return r.runInContainer(dkr, spec.Image, "./"+f.Name(), env)
 }
 
-func (r *Runner) runOutdoor(script string) (int, error) {
-	out, err := exec.Command(script).CombinedOutput()
+func getLinks(dkr *docker.Docker, spec *Spec) (map[string]string, error) {
+	links := make(map[string]string)
+	for name, _ := range spec.Services {
+		ip, err := dkr.IP(name)
+		if err != nil {
+			return nil, err
+		}
+		links[name] = ip
+	}
+	return links, nil
+}
+
+func (r *Runner) runOutdoor(script string, env []string) (int, error) {
+	// Use the current process env too
+	for _, e := range os.Environ() {
+		env = append(env, e)
+	}
+
+	cmd := exec.Command(script)
+	cmd.Env = env
+
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		exitErr, ok := err.(*exec.ExitError)
 		if !ok {
@@ -97,7 +127,7 @@ func (r *Runner) runOutdoor(script string) (int, error) {
 	return 0, nil
 }
 
-func (r *Runner) runInContainer(dkr *docker.Docker, image, script string) (int, error) {
+func (r *Runner) runInContainer(dkr *docker.Docker, image, script string, env []string) (int, error) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		return 0, err
@@ -105,6 +135,7 @@ func (r *Runner) runInContainer(dkr *docker.Docker, image, script string) (int, 
 
 	_, err = dkr.Up("runner", image, docker.UpOptions{
 		Cmd:        []string{script},
+		Env:        env,
 		AutoRemove: true,
 		Log:        true,
 		Binds: []string{

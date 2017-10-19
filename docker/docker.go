@@ -115,3 +115,12 @@ func (d *Docker) Remove(name string) error {
 func (d *Docker) Wait(name string) (int, error) {
 	return d.Client.WaitContainer(d.name(name))
 }
+
+func (d *Docker) IP(name string) (string, error) {
+	c, err := d.Client.InspectContainer(d.name(name))
+	if err != nil {
+		return "", err
+	}
+
+	return c.NetworkSettings.IPAddress, nil
+}

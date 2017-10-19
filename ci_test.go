@@ -26,6 +26,8 @@ func TestRunnerRun(t *testing.T) {
 		Script: []string{
 			`echo "Hello World!"`,
 			"go version",
+			"ping -c 1 $CI_db",
+			"ping -c 1 $CI_cache",
 			"not_a_command",
 			"echo",
 		},
