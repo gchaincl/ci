@@ -1,0 +1,18 @@
+---
+image: golang
+
+services:
+  database:
+    image: mysql
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+
+  cache:
+    image: redis
+
+script:
+  - export WORKDIR=$GOPATH/src/github.com/gchaincl/ci
+  - echo $WORKDIR
+  - mkdir -p $WORKDIR
+  - cp -r /ci/src/* $WORKDIR
+  - ls $WORKDIR
