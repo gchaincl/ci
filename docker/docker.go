@@ -64,6 +64,7 @@ func (d *Docker) Up(name, image string, opts UpOptions) (string, error) {
 			Container:    c.ID,
 			Follow:       true,
 			OutputStream: os.Stdout,
+			ErrorStream:  os.Stdout,
 			Stderr:       true,
 			Stdout:       true,
 		}
