@@ -13,6 +13,3 @@ services:
 script:
   - export WORKDIR=$GOPATH/src/github.com/gchaincl/ci
   - echo $WORKDIR
-  - mkdir -p $WORKDIR
-  - cp -r /ci/src/* $WORKDIR
-  - ls $WORKDIR
