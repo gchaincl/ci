@@ -27,7 +27,7 @@ func (b *Builder) Build(ctx context.Context, build *models.Build) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer os.Remove(target)
+	defer os.RemoveAll(target)
 
 	spec, err := parseSpec(target + "/ci.yml")
 	if err != nil {
@@ -80,11 +80,13 @@ func parseSpec(file string) (*ci.Spec, error) {
 }
 
 func (b *Builder) build(ctx context.Context, spec *ci.Spec, build *models.Build) (int, error) {
-	log.Printf("Building %s/%s#%d", build.Owner, build.Repo, build.Number)
+	name := fmt.Sprintf("%s/%s#%d", build.Owner, build.Repo, build.Number)
+	log.Printf("Building %s", name)
 	dkr, err := docker.New(build.Commit)
 	if err != nil {
 		return 0, err
 	}
 
+	defer log.Printf("Build %s done", name)
 	return (&ci.Runner{Destroy: true}).Run(dkr, spec)
 }
