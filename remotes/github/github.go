@@ -1,8 +1,10 @@
 package github
 
 import (
+	"errors"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gchaincl/ci/builder"
 	"github.com/gchaincl/ci/models"
@@ -16,17 +18,23 @@ type Client struct {
 	builder *builder.Builder
 }
 
-func New() *Client {
+func New() (*Client, error) {
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		return nil, errors.New("Please specify a GITHUB_TOKEN env var")
+	}
+
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: "066239b071d2111bfcfa1f988247112d384fe9a0"},
+		&oauth2.Token{AccessToken: token},
 	)
+
 	tc := oauth2.NewClient(ctx, ts)
 
 	return &Client{
 		Client:  github.NewClient(tc),
 		builder: &builder.Builder{},
-	}
+	}, nil
 }
 
 func (c *Client) Status(ctx context.Context, b *models.Build) error {
