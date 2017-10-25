@@ -50,36 +50,36 @@ func (c *Client) Status(ctx context.Context, b *models.Build) error {
 }
 
 func (c *Client) Hooks(w http.ResponseWriter, r *http.Request) {
-	log.Println("> GH Webhook")
 	build, err := parseWebHook(r)
 	if err != nil {
-		log.Printf("err = %+v\n", err)
-		return
-	}
-
-	build.Status = "pending"
-	if err := c.Status(r.Context(), build); err != nil {
-		log.Printf("err = %+v\n", err)
-		return
-	}
-
-	status, err := c.builder.Build(r.Context(), build)
-	if err != nil {
-		log.Printf("err = %+v\n", err)
-		return
-	}
-
-	if status != 0 {
 		build.Status = "error"
-		if err := c.Status(r.Context(), build); err != nil {
-			log.Printf("err = %+v\n", err)
-			return
-		}
-	}
-
-	build.Status = "success"
-	if err := c.Status(r.Context(), build); err != nil {
-		log.Printf("err = %+v\n", err)
+		c.Status(r.Context(), build)
+		http.Error(w, err.Error(), 500)
 		return
 	}
+
+	go func() {
+		if err := c.dispatch(context.Background(), build); err != nil {
+			log.Printf("err = %+v\n", err)
+		}
+	}()
+}
+
+func (c *Client) dispatch(ctx context.Context, build *models.Build) error {
+	build.Status = "pending"
+	if err := c.Status(ctx, build); err != nil {
+		return err
+	}
+
+	status, err := c.builder.Build(ctx, build)
+	if err != nil {
+		return err
+	}
+
+	if status == 0 {
+		build.Status = "success"
+	} else {
+		build.Status = "failure"
+	}
+	return c.Status(ctx, build)
 }
