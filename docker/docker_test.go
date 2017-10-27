@@ -25,7 +25,6 @@ func TestUp(t *testing.T) {
 	name, err := d.Up("box", "alpine", opts)
 	require.NoError(t, err)
 	assertContainerIsRunning(t, d, name)
-	assert.Equal(t, "/"+name, d.Services()["box"].Name)
 
 	t.Run("WhenContainerIsStopped", func(t *testing.T) {
 		require.NoError(t, d.StopContainer(name, 10))

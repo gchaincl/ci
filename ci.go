@@ -3,6 +3,7 @@ package ci
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -45,11 +46,21 @@ func (s *Service) EnvSlice() []string {
 type Runner struct {
 	Outdoor bool
 	Destroy bool
+	Stdout  io.Writer
+	Stderr  io.Writer
 }
 
 func (r *Runner) Run(dkr *docker.Docker, spec *Spec) (int, error) {
+	if r.Stdout == nil {
+		r.Stdout = os.Stdout
+	}
+
+	if r.Stderr == nil {
+		r.Stderr = os.Stdout
+	}
+
 	for name, srv := range spec.Services {
-		log.Printf("Starting service %s (%s)\n", name, srv.Image)
+		fmt.Fprintf(r.Stdout, "Starting service %s (%s)\n", name, srv.Image)
 
 		opts := docker.UpOptions{
 			Env: srv.EnvSlice(),
@@ -85,7 +96,7 @@ func (r *Runner) Run(dkr *docker.Docker, spec *Spec) (int, error) {
 		return r.runOutdoor("./"+f.Name(), env)
 	}
 
-	log.Printf("Running in container %s\n", spec.Image)
+	fmt.Fprintf(r.Stdout, "Running in container %s\n", spec.Image)
 	return r.runInContainer(dkr, spec.Image, "./"+f.Name(), env)
 }
 
@@ -117,13 +128,13 @@ func (r *Runner) runOutdoor(script string, env []string) (int, error) {
 			return 0, err
 		}
 
-		fmt.Printf("%s", out)
+		fmt.Fprintf(r.Stdout, "%s", out)
 		if exitErr.Success() {
 			return 0, nil
 		}
 		return 1, nil
 	}
-	fmt.Printf("%s", out)
+	fmt.Fprintf(r.Stdout, "%s", out)
 	return 0, nil
 }
 
@@ -142,6 +153,8 @@ func (r *Runner) runInContainer(dkr *docker.Docker, image, script string, env []
 			pwd + ":" + "/ci/src",
 		},
 		WorkingDir: "/ci/src",
+		Stdout:     r.Stdout,
+		Stderr:     r.Stderr,
 	})
 	return dkr.Wait("runner")
 }

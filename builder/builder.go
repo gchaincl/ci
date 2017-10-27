@@ -3,9 +3,7 @@ package builder
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
-	"time"
 
 	"golang.org/x/net/context"
 
@@ -19,11 +17,10 @@ import (
 type Builder struct {
 }
 
-func (b *Builder) Build(ctx context.Context, build *models.Build) (int, error) {
-	// TODO: implement build numbers
-	build.Number = int(time.Now().Unix())
-
-	target, err := b.clone(ctx, os.Stdout, build)
+// Build triggers a build defined by *models.Build, it will log the output to w.
+// if w is nil os.Stdout will be used
+func (b *Builder) Build(ctx context.Context, build *models.Build, w io.Writer) (int, error) {
+	target, err := b.clone(ctx, build, w)
 	if err != nil {
 		return 0, err
 	}
@@ -34,16 +31,16 @@ func (b *Builder) Build(ctx context.Context, build *models.Build) (int, error) {
 		return 0, err
 	}
 
-	return b.build(ctx, spec, build)
+	return b.build(ctx, spec, build, w)
 }
 
-func (b *Builder) clone(ctx context.Context, w io.Writer, build *models.Build) (string, error) {
+func (b *Builder) clone(ctx context.Context, build *models.Build, w io.Writer) (string, error) {
 	target := fmt.Sprintf("builds/%s/%s/%d/%s/%s",
 		build.Owner, build.Repo,
 		build.Number,
 		build.Owner, build.Repo,
 	)
-	log.Printf("Cloning into %s", target)
+	fmt.Fprintf(w, "Cloning into %s\n", target)
 
 	_, err := git.PlainClone(target, false, &git.CloneOptions{
 		URL:      build.CloneURL,
@@ -79,14 +76,15 @@ func parseSpec(file string) (*ci.Spec, error) {
 	return spec, nil
 }
 
-func (b *Builder) build(ctx context.Context, spec *ci.Spec, build *models.Build) (int, error) {
+func (b *Builder) build(ctx context.Context, spec *ci.Spec, build *models.Build, w io.Writer) (int, error) {
 	name := fmt.Sprintf("%s/%s#%d", build.Owner, build.Repo, build.Number)
-	log.Printf("Building %s", name)
+	fmt.Fprintf(w, "Building %s\n", name)
 	dkr, err := docker.New(build.Commit)
 	if err != nil {
 		return 0, err
 	}
 
-	defer log.Printf("Build %s done", name)
-	return (&ci.Runner{Destroy: true}).Run(dkr, spec)
+	s, err := (&ci.Runner{Destroy: true, Stdout: w, Stderr: w}).Run(dkr, spec)
+	fmt.Fprintf(w, "Build %s done\n", name)
+	return s, err
 }

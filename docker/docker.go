@@ -1,7 +1,7 @@
 package docker
 
 import (
-	"os"
+	"io"
 
 	docker "github.com/fsouza/go-dockerclient"
 )
@@ -25,7 +25,9 @@ type UpOptions struct {
 	AutoRemove bool
 
 	// Behavior
-	Log bool
+	Log    bool
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 func New(s string) (*Docker, error) {
@@ -63,8 +65,8 @@ func (d *Docker) Up(name, image string, opts UpOptions) (string, error) {
 		lOpts := docker.LogsOptions{
 			Container:    c.ID,
 			Follow:       true,
-			OutputStream: os.Stdout,
-			ErrorStream:  os.Stdout,
+			OutputStream: opts.Stdout,
+			ErrorStream:  opts.Stderr,
 			Stderr:       true,
 			Stdout:       true,
 		}
