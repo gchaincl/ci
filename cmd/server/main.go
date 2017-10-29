@@ -4,12 +4,13 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gchaincl/ci/builder"
 	"github.com/gchaincl/ci/remotes/github"
 	"github.com/gchaincl/ci/server"
 )
 
 func main() {
-	srv := server.New()
+	srv := server.New(&builder.DockerBuilder{})
 
 	gh, err := github.New()
 	if err != nil {

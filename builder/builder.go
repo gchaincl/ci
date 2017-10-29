@@ -14,12 +14,16 @@ import (
 	yaml "gopkg.in/yaml.v1"
 )
 
-type Builder struct {
+type Builder interface {
+	Build(context.Context, *models.Build, io.Writer) (int, error)
+}
+
+type DockerBuilder struct {
 }
 
 // Build triggers a build defined by *models.Build, it will log the output to w.
 // if w is nil os.Stdout will be used
-func (b *Builder) Build(ctx context.Context, build *models.Build, w io.Writer) (int, error) {
+func (b *DockerBuilder) Build(ctx context.Context, build *models.Build, w io.Writer) (int, error) {
 	target, err := b.clone(ctx, build, w)
 	if err != nil {
 		return 0, err
@@ -34,7 +38,7 @@ func (b *Builder) Build(ctx context.Context, build *models.Build, w io.Writer) (
 	return b.build(ctx, spec, build, w)
 }
 
-func (b *Builder) clone(ctx context.Context, build *models.Build, w io.Writer) (string, error) {
+func (b *DockerBuilder) clone(ctx context.Context, build *models.Build, w io.Writer) (string, error) {
 	target := fmt.Sprintf("builds/%s/%s/%d/%s/%s",
 		build.Owner, build.Repo,
 		build.Number,
@@ -76,7 +80,7 @@ func parseSpec(file string) (*ci.Spec, error) {
 	return spec, nil
 }
 
-func (b *Builder) build(ctx context.Context, spec *ci.Spec, build *models.Build, w io.Writer) (int, error) {
+func (b *DockerBuilder) build(ctx context.Context, spec *ci.Spec, build *models.Build, w io.Writer) (int, error) {
 	name := fmt.Sprintf("%s/%s#%d", build.Owner, build.Repo, build.Number)
 	fmt.Fprintf(w, "Building %s\n", name)
 	dkr, err := docker.New(build.Commit)

@@ -2,9 +2,7 @@ package server
 
 import (
 	"bufio"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 
@@ -18,12 +16,11 @@ import (
 
 type Server struct {
 	router  *mux.Router
-	builder *builder.Builder
+	builder builder.Builder
 	logs    map[string]io.Reader
 }
 
-func New() *Server {
-	b := &builder.Builder{}
+func New(b builder.Builder) *Server {
 	router := mux.NewRouter()
 	srv := &Server{
 		router:  router,
@@ -50,7 +47,6 @@ func (s *Server) logHandler(w http.ResponseWriter, req *http.Request) {
 	for {
 		line, err := rd.ReadBytes('\n')
 		if err != nil {
-			log.Printf("err = %+v\n", err)
 			return
 		}
 
@@ -98,7 +94,6 @@ func (s *Server) Build(build *models.Build, remote remotes.Remote) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "\n")
 
 	if status == 0 {
 		build.Status = "success"
