@@ -1,0 +1,30 @@
+pipeline:
+  step1:
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step2:
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step3:
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step4:
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step5:
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step6:
+    image: golang:1.10
+    commands:
+      - sleep 10
