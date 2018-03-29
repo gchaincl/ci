@@ -1,0 +1,48 @@
+pipeline:
+  step1:
+    group: build
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step2:
+    group: build
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step3:
+    group: build
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step4:
+    group: build
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step5:
+    group: build
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step6:
+    group: build
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step7:
+    group: build
+    image: golang:1.10
+    commands:
+      - sleep 10
+
+  step8:
+    group: build
+    image: golang:1.10
+    commands:
+      - sleep 10
