@@ -23,8 +23,3 @@ pipeline:
     image: golang:1.10
     commands:
       - sleep 10
-
-  step6:
-    image: golang:1.10
-    commands:
-      - sleep 10
